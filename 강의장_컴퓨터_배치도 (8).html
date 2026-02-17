@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>강의장 배치도 — SBS 안산 CG학과</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0f1117; --surface:#1a1d27; --surface2:#22263a; --border:#2e3350;
+    --E:#3b82f6; --E-dim:#1e3a5f; --E-glow:rgba(59,130,246,0.12);
+    --C:#22c55e; --C-dim:#14532d; --C-glow:rgba(34,197,94,0.12);
+    --H:#f97316; --H-dim:#7c2d12; --H-glow:rgba(249,115,22,0.12);
+    --text:#e2e8f0; --text-dim:#64748b; --text-muted:#2a3050;
+    --accent:#818cf8; --warn:#fbbf24;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:32px 20px 60px;}
+
+  header{text-align:center;margin-bottom:28px;}
+  .header-sub{font-size:11px;letter-spacing:4px;color:var(--accent);text-transform:uppercase;margin-bottom:8px;}
+  header h1{font-size:26px;font-weight:900;background:linear-gradient(135deg,#e2e8f0,#818cf8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:4px;}
+  .header-date{font-size:12px;color:var(--text-dim);margin-bottom:14px;}
+  .hints{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-bottom:8px;}
+  .hint{display:inline-flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:6px 14px;font-size:11px;}
+  .hint-edit{color:var(--warn);}
+  .hint-drag{color:#a78bfa;}
+  .dot{width:6px;height:6px;border-radius:50%;animation:pulse 1.5s infinite;}
+  .dot-y{background:var(--warn);}
+  .dot-p{background:#a78bfa;}
+  @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(1.4)}}
+
+  .save-bar{display:flex;justify-content:center;align-items:center;gap:12px;margin-bottom:24px;flex-wrap:wrap;}
+  .btn{padding:9px 22px;border-radius:8px;border:none;font-family:'Noto Sans KR',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;}
+  .btn-save{background:var(--accent);color:#0f1117;}
+  .btn-save:hover{background:#a5b4fc;transform:translateY(-1px);box-shadow:0 4px 20px rgba(129,140,248,.4);}
+  .btn-reset{background:transparent;color:var(--text-dim);border:1px solid var(--border);}
+  .btn-reset:hover{color:var(--text);border-color:var(--text-dim);}
+  .save-msg{display:none;align-items:center;gap:6px;font-size:12px;color:#4ade80;}
+  .save-msg.show{display:flex;}
+  .save-note{font-size:11px;color:var(--text-dim);text-align:center;margin-bottom:20px;}
+  .save-note b{color:var(--warn);}
+
+  .rooms{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:20px;max-width:1400px;margin:0 auto;}
+  .room{background:var(--surface);border-radius:16px;overflow:hidden;border:1px solid var(--border);transition:box-shadow .3s;}
+  .room:hover{box-shadow:0 0 50px rgba(129,140,248,.06);}
+  .room-header{padding:16px 20px 12px;border-bottom:1px solid var(--border);}
+  .room-E .room-header{background:linear-gradient(135deg,var(--E-dim) 0%,transparent 70%);border-top:3px solid var(--E);}
+  .room-C .room-header{background:linear-gradient(135deg,var(--C-dim) 0%,transparent 70%);border-top:3px solid var(--C);}
+  .room-H .room-header{background:linear-gradient(135deg,var(--H-dim) 0%,transparent 70%);border-top:3px solid var(--H);}
+  .room-title-row{display:flex;align-items:center;gap:10px;margin-bottom:4px;}
+  .room-icon{font-size:18px;flex-shrink:0;}
+  .room-name{font-size:16px;font-weight:900;outline:none;background:transparent;border:1px solid transparent;color:var(--text);cursor:text;font-family:'Noto Sans KR',sans-serif;padding:3px 6px;border-radius:5px;transition:background .15s;width:100%;}
+  .room-name:hover{background:rgba(255,255,255,.04);border-color:var(--border);}
+  .room-name:focus{background:rgba(255,255,255,.06);border-color:var(--accent);outline:none;}
+  .room-meta{font-size:11px;color:var(--text-dim);padding-left:28px;}
+
+  .room-body{padding:18px;}
+  .blackboard{background:var(--surface2);border:1px dashed var(--border);border-radius:6px;text-align:center;padding:7px;font-size:11px;color:var(--text-dim);letter-spacing:1px;margin-bottom:14px;}
+  .teacher-pc{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;padding:8px 16px;border-radius:8px;font-size:11px;font-weight:700;margin-bottom:14px;gap:1px;}
+  .room-E .teacher-pc{background:rgba(59,130,246,.15);border:1.5px solid rgba(59,130,246,.5);color:#93c5fd;}
+  .room-C .teacher-pc{background:rgba(34,197,94,.15);border:1.5px solid rgba(34,197,94,.5);color:#86efac;}
+  .room-H .teacher-pc{background:rgba(249,115,22,.15);border:1.5px solid rgba(249,115,22,.5);color:#fdba74;}
+  .teacher-pc small{font-size:9px;opacity:.5;font-weight:400;}
+
+  .layout{display:flex;gap:6px;align-items:flex-start;margin-bottom:18px;}
+  .wall-box{border-radius:10px;padding:10px 8px;}
+  .room-E .wall-box{background:var(--E-glow);border:1px solid rgba(59,130,246,.25);}
+  .room-C .wall-box{background:var(--C-glow);border:1px solid rgba(34,197,94,.25);}
+  .room-H .wall-box{background:var(--H-glow);border:1px solid rgba(249,115,22,.25);}
+  .wall-label{font-size:9px;font-weight:700;letter-spacing:1px;text-align:center;margin-bottom:8px;}
+  .room-E .wall-label{color:#93c5fd;}
+  .room-C .wall-label{color:#86efac;}
+  .room-H .wall-label{color:#fdba74;}
+  .pc-grid{display:grid;gap:5px;}
+
+  .pc{border-radius:6px;padding:5px 3px;text-align:center;font-size:10px;font-weight:700;cursor:grab;transition:all .12s;outline:none;border:none;font-family:'Noto Sans KR',sans-serif;min-height:30px;display:flex;align-items:center;justify-content:center;line-height:1.2;user-select:none;}
+  .pc:active{cursor:grabbing;}
+  .room-E .pc{background:rgba(30,58,95,.8);color:#93c5fd;border:1px solid rgba(59,130,246,.4);}
+  .room-C .pc{background:rgba(20,83,45,.8);color:#86efac;border:1px solid rgba(34,197,94,.4);}
+  .room-H .pc{background:rgba(124,45,18,.8);color:#fdba74;border:1px solid rgba(249,115,22,.4);}
+  .room-E .pc:hover{background:rgba(59,130,246,.35);color:#fff;box-shadow:0 0 10px rgba(59,130,246,.4);}
+  .room-C .pc:hover{background:rgba(34,197,94,.35);color:#fff;box-shadow:0 0 10px rgba(34,197,94,.4);}
+  .room-H .pc:hover{background:rgba(249,115,22,.35);color:#fff;box-shadow:0 0 10px rgba(249,115,22,.4);}
+  .pc.editing{cursor:text !important;outline:2px solid white;z-index:20;}
+  .room-E .pc.editing{background:rgba(59,130,246,.5);}
+  .room-C .pc.editing{background:rgba(34,197,94,.5);}
+  .room-H .pc.editing{background:rgba(249,115,22,.5);}
+  .pc.dragging{opacity:.3;transform:scale(.95);}
+
+  /* 드롭 대상 강조 — 같은/다른 강의장 모두 */
+  .pc.drag-over,.pc-slot.empty.drag-over{outline:2px dashed white;transform:scale(1.1);z-index:15;background:rgba(129,140,248,.45) !important;color:#fff !important;box-shadow:0 0 16px rgba(129,140,248,.5);}
+  .room-E .pc.drag-over{background:rgba(59,130,246,.55) !important;box-shadow:0 0 16px rgba(59,130,246,.6);}
+  .room-C .pc.drag-over{background:rgba(34,197,94,.55) !important;box-shadow:0 0 16px rgba(34,197,94,.6);}
+  .room-H .pc.drag-over{background:rgba(249,115,22,.55) !important;box-shadow:0 0 16px rgba(249,115,22,.6);}
+
+  .pc-slot.empty{border-radius:6px;min-height:30px;border:2px dashed rgba(255,255,255,.1);background:rgba(255,255,255,.02);cursor:default;transition:all .15s;}
+  .room-E .pc-slot.empty.drag-over{border-color:var(--E);background:rgba(59,130,246,.2);box-shadow:0 0 12px rgba(59,130,246,.3);}
+  .room-C .pc-slot.empty.drag-over{border-color:var(--C);background:rgba(34,197,94,.2);box-shadow:0 0 12px rgba(34,197,94,.3);}
+  .room-H .pc-slot.empty.drag-over{border-color:var(--H);background:rgba(249,115,22,.2);box-shadow:0 0 12px rgba(249,115,22,.3);}
+
+  .aisle{width:24px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--text-muted);writing-mode:vertical-rl;letter-spacing:2px;}
+  .divider{height:1px;background:var(--border);margin:14px 0;}
+  .prog-title{font-size:10px;font-weight:700;color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+  .prog-title::after{content:'';flex:1;height:1px;background:var(--border);}
+  .prog-table{width:100%;border-collapse:collapse;font-size:11px;}
+  .prog-table tr{border-bottom:1px solid rgba(46,51,80,.6);}
+  .prog-table tr:last-child{border-bottom:none;}
+  .prog-cat{padding:6px 8px 6px 0;color:var(--text-dim);font-weight:700;white-space:nowrap;width:72px;vertical-align:middle;font-size:10px;}
+  .prog-name{padding:5px 7px;color:var(--text);outline:none;background:transparent;border:1px solid transparent;border-radius:4px;font-family:'Noto Sans KR',sans-serif;font-size:11px;width:100%;cursor:text;transition:all .15s;vertical-align:middle;display:block;}
+  .prog-name:hover{border-color:var(--border);background:var(--surface2);}
+  .prog-name:focus{border-color:var(--accent);background:var(--surface2);outline:none;}
+  .alert{border-radius:8px;padding:10px 12px;font-size:11px;line-height:1.8;margin-top:10px;white-space:pre-line;}
+  .alert-warn{background:rgba(251,191,36,.07);border:1px solid rgba(251,191,36,.25);color:#fcd34d;}
+  .alert-ok{background:rgba(34,197,94,.07);border:1px solid rgba(34,197,94,.25);color:#86efac;}
+  .alert-info{background:rgba(249,115,22,.07);border:1px solid rgba(249,115,22,.25);color:#fdba74;}
+  .h-sub-gap{height:5px;}
+  #drag-ghost{position:fixed;pointer-events:none;z-index:9999;padding:6px 12px;border-radius:6px;font-size:11px;font-weight:700;background:rgba(129,140,248,.95);color:#0f1117;box-shadow:0 8px 30px rgba(0,0,0,.5);transform:translate(-50%,-50%);display:none;font-family:'Noto Sans KR',sans-serif;}
+</style>
+</head>
+<body>
+<div id="drag-ghost"></div>
+
+<header>
+  <div class="header-sub">SBS 컴퓨터아카데미 안산지점 · CG학과</div>
+  <h1>강의장 컴퓨터 배치도</h1>
+  <div class="header-date">2025년 3월 기준</div>
+  <div class="hints">
+    <div class="hint hint-edit"><div class="dot dot-y"></div>텍스트 클릭 → 수정 &nbsp;|&nbsp; PC번호 더블클릭 → 수정</div>
+    <div class="hint hint-drag"><div class="dot dot-p"></div>PC 드래그 → 위치 이동 (다른 벽으로도 가능)</div>
+  </div>
+</header>
+
+<div class="save-bar">
+  <button class="btn btn-save" onclick="saveFile()">💾 저장하기 (파일 다운로드)</button>
+  <button class="btn btn-reset" onclick="resetAll()">↩ 기본값으로 초기화</button>
+  <span class="save-msg" id="saveMsg">✓ 저장 파일이 다운로드됐어요! 그 파일을 앞으로 사용하세요.</span>
+</div>
+<p class="save-note">💡 저장하기를 누르면 <b>수정된 내용이 포함된 새 파일이 다운로드</b>돼요. 그 파일을 열면 항상 저장된 상태 그대로예요.</p>
+
+<div class="rooms">
+
+  <!-- ══ E 강의장 ══ -->
+  <div class="room room-E">
+    <div class="room-header">
+      <div class="room-title-row">
+        <span class="room-icon">🖥️</span>
+        <div class="room-name" contenteditable="true" data-key="title-E">E 강의장 — CG · VFX · 모션 · 편집</div>
+      </div>
+      <div class="room-meta">학생 PC 20대 · 강사 PC 맨 왼쪽</div>
+    </div>
+    <div class="room-body">
+      <div class="blackboard">📋 칠판 / 스크린 ( 앞 )</div>
+      <div class="teacher-pc">🖥️ 강사 PC <small>E-Teacher</small></div>
+      <div class="layout">
+        <div class="wall-box" style="flex:1">
+          <div class="wall-label">← 왼쪽 벽</div>
+          <div class="pc-grid" style="grid-template-columns:1fr" id="E-left"></div>
+        </div>
+        <div class="aisle">통로</div>
+        <div class="wall-box" style="flex:1">
+          <div class="wall-label">오른쪽 벽 →</div>
+          <div class="pc-grid" style="grid-template-columns:1fr" id="E-right"></div>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="prog-title">설치 프로그램</div>
+      <table class="prog-table">
+        <tr><td class="prog-cat">OS</td><td><div class="prog-name" contenteditable="true" data-key="Ep0">Windows (정품 인증)</div></td></tr>
+        <tr><td class="prog-cat">드라이버</td><td><div class="prog-name" contenteditable="true" data-key="Ep1">그래픽카드 드라이버 / CPU 드라이버</div></td></tr>
+        <tr><td class="prog-cat">기본세팅</td><td><div class="prog-name" contenteditable="true" data-key="Ep2">방화벽 / 배경화면 / SC MATE</div></td></tr>
+        <tr><td class="prog-cat">오피스</td><td><div class="prog-name" contenteditable="true" data-key="Ep3">MS365</div></td></tr>
+        <tr><td class="prog-cat">Adobe</td><td><div class="prog-name" contenteditable="true" data-key="Ep4">Creative Cloud / Substance Painter 11</div></td></tr>
+        <tr><td class="prog-cat">Autodesk</td><td><div class="prog-name" contenteditable="true" data-key="Ep5">MAYA 2025</div></td></tr>
+        <tr><td class="prog-cat">렌더러</td><td><div class="prog-name" contenteditable="true" data-key="Ep6">V-RAY 7.10.00</div></td></tr>
+        <tr><td class="prog-cat">FX</td><td><div class="prog-name" contenteditable="true" data-key="Ep7">Houdini ⚠️ 라이선스 확인 필요</div></td></tr>
+        <tr><td class="prog-cat">언리얼</td><td><div class="prog-name" contenteditable="true" data-key="Ep8">Unreal Engine</div></td></tr>
+        <tr><td class="prog-cat">트래킹</td><td><div class="prog-name" contenteditable="true" data-key="Ep9">PFTrack / Boujou</div></td></tr>
+        <tr><td class="prog-cat">합성</td><td><div class="prog-name" contenteditable="true" data-key="Ep10">Nuke</div></td></tr>
+        <tr><td class="prog-cat">관리</td><td><div class="prog-name" contenteditable="true" data-key="Ep11">SC MATE (컴퓨터 이름 지정)</div></td></tr>
+      </table>
+      <div class="alert alert-warn">⚠️ 강사PC 디스코드: sbsansan.e@gmail.com / dkstks11!(안산11!)
+학생PC SC MATE 초록 아이콘 오른쪽 하단 확인
+배경화면·아이콘 위치·순서 기준PC와 동일 여부 체크</div>
+    </div>
+  </div>
+
+  <!-- ══ C 강의장 ══ -->
+  <div class="room room-C">
+    <div class="room-header">
+      <div class="room-title-row">
+        <span class="room-icon">🎬</span>
+        <div class="room-name" contenteditable="true" data-key="title-C">C 강의장 — CG · 모션 · 편집 · 자격증</div>
+      </div>
+      <div class="room-meta">학생 PC 27대 · 강사 PC 맨 왼쪽</div>
+    </div>
+    <div class="room-body">
+      <div class="blackboard">📋 칠판 / 스크린 ( 앞 )</div>
+      <div class="teacher-pc">🎬 강사 PC <small>C-Teacher</small></div>
+      <div class="layout">
+        <div class="wall-box" style="flex:3">
+          <div class="wall-label">← 왼쪽 벽 (5행×3열)</div>
+          <div class="pc-grid" style="grid-template-columns:repeat(3,1fr)" id="C-left"></div>
+        </div>
+        <div class="aisle">통로</div>
+        <div class="wall-box" style="flex:2">
+          <div class="wall-label">오른쪽 벽 → (6행×2열)</div>
+          <div class="pc-grid" style="grid-template-columns:repeat(2,1fr)" id="C-right"></div>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="prog-title">설치 프로그램 (트루이미지 세팅)</div>
+      <table class="prog-table">
+        <tr><td class="prog-cat">OS</td><td><div class="prog-name" contenteditable="true" data-key="Cp0">Windows 포맷 + 정품 인증</div></td></tr>
+        <tr><td class="prog-cat">드라이버</td><td><div class="prog-name" contenteditable="true" data-key="Cp1">그래픽카드 드라이버 / CPU 드라이버</div></td></tr>
+        <tr><td class="prog-cat">기본세팅</td><td><div class="prog-name" contenteditable="true" data-key="Cp2">방화벽 / 배경화면 / SC MATE</div></td></tr>
+        <tr><td class="prog-cat">오피스</td><td><div class="prog-name" contenteditable="true" data-key="Cp3">MS365</div></td></tr>
+        <tr><td class="prog-cat">Adobe</td><td><div class="prog-name" contenteditable="true" data-key="Cp4">Creative Cloud / Substance Painter 11</div></td></tr>
+        <tr><td class="prog-cat">Autodesk</td><td><div class="prog-name" contenteditable="true" data-key="Cp5">MAYA 2025</div></td></tr>
+        <tr><td class="prog-cat">렌더러</td><td><div class="prog-name" contenteditable="true" data-key="Cp6">V-RAY 7.10.00 / Octane 2025</div></td></tr>
+        <tr><td class="prog-cat">3D</td><td><div class="prog-name" contenteditable="true" data-key="Cp7">Cinema 4D 2025</div></td></tr>
+      </table>
+      <div class="alert alert-ok">✅ 트루이미지 순서: 포맷 → 드라이버 → 기본세팅 → 프로그램 설치 → 렌더링 테스트 → 백업본 생성</div>
+    </div>
+  </div>
+
+  <!-- ══ H 강의장 ══ -->
+  <div class="room room-H">
+    <div class="room-header">
+      <div class="room-title-row">
+        <span class="room-icon">🏛️</span>
+        <div class="room-name" contenteditable="true" data-key="title-H">H 강의장 — 인테리어 수업 (기존 PC 이전)</div>
+      </div>
+      <div class="room-meta">학생 PC 17대 · 기존 E·C 컴퓨터 이전</div>
+    </div>
+    <div class="room-body">
+      <div class="blackboard">📋 칠판 / 스크린 ( 앞 )</div>
+      <div class="teacher-pc">🏛️ 강사 PC <small>H-Teacher</small></div>
+      <div class="layout">
+        <div class="wall-box" style="flex:3">
+          <div class="wall-label">← 왼쪽 벽 (2행×3열)</div>
+          <div class="pc-grid" style="grid-template-columns:repeat(3,1fr)" id="H-left"></div>
+        </div>
+        <div class="aisle">통로</div>
+        <div class="wall-box" style="flex:4">
+          <div class="wall-label">오른쪽 벽 → (3행×3열 + 2대)</div>
+          <div class="pc-grid" style="grid-template-columns:repeat(3,1fr)" id="H-right-top"></div>
+          <div class="h-sub-gap"></div>
+          <div class="pc-grid" style="grid-template-columns:repeat(3,1fr)" id="H-right-bot"></div>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="prog-title">설치 프로그램</div>
+      <table class="prog-table">
+        <tr><td class="prog-cat">오피스</td><td><div class="prog-name" contenteditable="true" data-key="Hp0">MS365</div></td></tr>
+        <tr><td class="prog-cat">CAD</td><td><div class="prog-name" contenteditable="true" data-key="Hp1">AutoCAD</div></td></tr>
+        <tr><td class="prog-cat">인테리어</td><td><div class="prog-name" contenteditable="true" data-key="Hp2">인테리어 관련 프로그램 (교체 예정)</div></td></tr>
+      </table>
+      <div class="alert alert-info">📌 02/19 점검: 강사PC HDMI·모니터·AutoCAD 실행 확인
+강사PC 디스코드: sbsansan.h@gmail.com / dkstks11!(안산11!)
+학생PC 17대: 파워·모니터·키보드·마우스·인터넷선·전원 확인</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ════════════════════════════════════════════
+// 파일 안에 직접 저장되는 데이터
+// 저장 버튼 → 이 값이 업데이트된 새 파일 다운로드
+// !! 이 줄을 직접 수정하지 마세요 !!
+const SAVED_DATA = {};
+// ════════════════════════════════════════════
+
+const gridSlots = {
+  'E-left':10,'E-right':10,
+  'C-left':15,'C-right':14,
+  'H-left':6,'H-right-top':9,'H-right-bot':3
+};
+const defaults = {
+  'E-left':      Array.from({length:10},(_,i)=>`E-${String(i+1).padStart(2,'0')}`),
+  'E-right':     Array.from({length:10},(_,i)=>`E-${String(20-i).padStart(2,'0')}`),
+  'C-left':      Array.from({length:15},(_,i)=>`C-${String(i+1).padStart(2,'0')}`),
+  'C-right':     [...Array.from({length:12},(_,i)=>`C-${String(i+16).padStart(2,'0')}`), '', ''],
+  'H-left':      Array.from({length:6}, (_,i)=>`H-${String(i+1).padStart(2,'0')}`),
+  'H-right-top': Array.from({length:9}, (_,i)=>`H-${String(i+7).padStart(2,'0')}`),
+  'H-right-bot': ['H-16','H-17',''],
+};
+
+// ── PC/빈칸 렌더 ──
+function makePCs(gridId, labels) {
+  const grid = document.getElementById(gridId);
+  if (!grid) return;
+  grid.innerHTML = '';
+  const total = gridSlots[gridId] || labels.length;
+  for (let idx = 0; idx < total; idx++) {
+    const label = labels[idx] ?? '';
+    const el = document.createElement('div');
+    el.dataset.grid = gridId;
+    el.dataset.idx  = String(idx);
+    if (label === '') {
+      el.className = 'pc-slot empty';
+    } else {
+      el.className = 'pc';
+      el.dataset.key = `pc-${gridId}-${idx}`;
+      el.textContent = label;
+      attachEvents(el);
+    }
+    grid.appendChild(el);
+  }
+}
+
+function attachEvents(el) {
+  el.contentEditable = 'false';
+  el.addEventListener('dblclick', e => {
+    e.stopPropagation();
+    el.classList.add('editing');
+    el.contentEditable = 'true';
+    el.focus();
+    const r = document.createRange();
+    r.selectNodeContents(el);
+    const s = window.getSelection();
+    s.removeAllRanges(); s.addRange(r);
+  });
+  el.addEventListener('blur', () => {
+    el.classList.remove('editing');
+    el.contentEditable = 'false';
+  });
+  el.addEventListener('keydown', e => {
+    if (e.key==='Enter'){e.preventDefault();el.blur();}
+    if (e.key==='Escape') el.blur();
+  });
+  el.addEventListener('mousedown', e => {
+    if (el.contentEditable==='true') return;
+    startDrag(e, el);
+  });
+}
+
+// ── 드래그 ──
+let dragEl=null, overEl=null;
+const ghost = document.getElementById('drag-ghost');
+
+function startDrag(e, el) {
+  if (e.button!==0) return;
+  e.preventDefault();
+  dragEl = el;
+  ghost.textContent = el.textContent;
+  ghost.style.display = 'block';
+  ghost.style.left = e.clientX+'px';
+  ghost.style.top  = e.clientY+'px';
+  requestAnimationFrame(()=>el.classList.add('dragging'));
+  document.addEventListener('mousemove', onMove);
+  document.addEventListener('mouseup', onUp);
+}
+
+function onMove(e) {
+  if (!dragEl) return;
+  ghost.style.left = e.clientX+'px';
+  ghost.style.top  = e.clientY+'px';
+  ghost.style.display='none';
+  const t = document.elementFromPoint(e.clientX, e.clientY);
+  ghost.style.display='block';
+  const slot = t?.closest('.pc,.pc-slot');
+  if (overEl && overEl!==dragEl) overEl.classList.remove('drag-over');
+  if (slot && slot!==dragEl) { slot.classList.add('drag-over'); overEl=slot; }
+  else overEl=null;
+}
+
+function onUp(e) {
+  document.removeEventListener('mousemove', onMove);
+  document.removeEventListener('mouseup', onUp);
+  ghost.style.display='none';
+
+  if (overEl && overEl!==dragEl) {
+    const dragTxt  = dragEl.textContent.trim();
+    const isEmpty  = overEl.classList.contains('empty');
+    const overTxt  = isEmpty ? '' : overEl.textContent.trim();
+
+    if (isEmpty) {
+      // PC → 빈칸 이동
+      const gId = overEl.dataset.grid;
+      const idx  = overEl.dataset.idx;
+      overEl.className  = 'pc';
+      overEl.textContent = dragTxt;
+      overEl.dataset.key = `pc-${gId}-${idx}`;
+      attachEvents(overEl);
+
+      // 원래 자리 → 빈칸
+      const clone = dragEl.cloneNode(false);
+      clone.className = 'pc-slot empty';
+      clone.textContent = '';
+      delete clone.dataset.key;
+      clone.removeAttribute('contenteditable');
+      dragEl.parentNode.replaceChild(clone, dragEl);
+    } else {
+      // PC ↔ PC (다른 강의장 포함)
+      dragEl.textContent = overTxt;
+      overEl.textContent = dragTxt;
+    }
+    overEl.classList.remove('drag-over');
+  }
+  if (dragEl) dragEl.classList.remove('dragging');
+  dragEl=null; overEl=null;
+}
+
+// ── 렌더 ──
+function renderAll() {
+  Object.entries(defaults).forEach(([id, def]) => {
+    const total = gridSlots[id] || def.length;
+    const labels = Array.from({length:total}, (_,i) => {
+      const k = `pc-${id}-${i}`;
+      return (SAVED_DATA[k] !== undefined) ? SAVED_DATA[k] : (def[i] ?? '');
+    });
+    makePCs(id, labels);
+  });
+  document.querySelectorAll('[data-key]:not(.pc)').forEach(el => {
+    if (SAVED_DATA[el.dataset.key] !== undefined) el.textContent = SAVED_DATA[el.dataset.key];
+  });
+}
+
+// ── 현재 상태 수집 ──
+function collectData() {
+  const d = {};
+  Object.keys(gridSlots).forEach(id => {
+    const grid = document.getElementById(id);
+    if (!grid) return;
+    grid.querySelectorAll('.pc,.pc-slot').forEach((el,i) => {
+      d[`pc-${id}-${i}`] = el.classList.contains('empty') ? '' : el.textContent.trim();
+    });
+  });
+  document.querySelectorAll('[data-key]:not(.pc)').forEach(el => {
+    d[el.dataset.key] = el.textContent.trim();
+  });
+  return d;
+}
+
+// ── 저장 → 파일 다운로드 ──
+function saveFile() {
+  const data = collectData();
+  const dataStr = JSON.stringify(data);
+
+  // 현재 HTML에서 SAVED_DATA = {} 부분을 현재 데이터로 교체
+  let html = document.documentElement.outerHTML;
+  html = html.replace(
+    /const SAVED_DATA = \{.*?\};/s,
+    `const SAVED_DATA = ${dataStr};`
+  );
+
+  const blob = new Blob([html], {type:'text/html;charset=utf-8'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url;
+  a.download = '강의장_컴퓨터_배치도.html';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+
+  const msg = document.getElementById('saveMsg');
+  msg.classList.add('show');
+  setTimeout(()=>msg.classList.remove('show'), 4000);
+}
+
+// ── 초기화 → 파일 다운로드 ──
+function resetAll() {
+  if (!confirm('모든 내용을 기본값으로 초기화한 파일을 다운로드할까요?')) return;
+  let html = document.documentElement.outerHTML;
+  html = html.replace(/const SAVED_DATA = \{.*?\};/s, 'const SAVED_DATA = {};');
+  const blob = new Blob([html], {type:'text/html;charset=utf-8'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url;
+  a.download = '강의장_컴퓨터_배치도.html';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+renderAll();
+</script>
+</body>
+</html>
